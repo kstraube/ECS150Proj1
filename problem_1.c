@@ -94,8 +94,15 @@ int compare(char* buff1, char* buff2, int fd1, int fd2, int counter, int* opts){
       val=-1;
       break;
     } 
-    else if(buff1[i] != buff2[i]) {
-      printf("At position %d, %c, %c\n",position, buff1[i], buff2[i]);
+    else if(opts[2]==0){
+      if(buff1[i] != buff2[i])
+        printf("At position %d, %c, %c\n",position, buff1[i], buff2[i]);
+    }
+    else if(opts[2]==1){
+      char a1 = tolower(buff1[i]);
+      char a2 = tolower(buff2[i]);
+      if(a1 != a2)
+        printf("In case insensitive mode, At position %d, %c, %c\n",position, buff1[i], buff2[i]);
     }
   }
   return val;
