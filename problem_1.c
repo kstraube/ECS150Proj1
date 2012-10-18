@@ -3,20 +3,22 @@
 #include <errno.h>
 #include <string.h>
 
-int checks(int argc, char* argv[]);
-int compare(char* buffer1, char* buffer2, int fd1, int fd2, int counter);
+int checks(int argc, char* argv[], int* opts);
+int compare(char* buffer1, char* buffer2, int fd1, int fd2, int counter, int* opts);
 void print(int fd, int position);
  
 int main (int argc, char* argv[])
 {
   int fd1, fd2, nread1, nread2, rcomp=0, counter=0;
   char buffer1[1024], buffer2[1024];
-  int arg = checks(argc, argv); 
+  int options[3]={0,0,0}; //correspoding to options[s,d,u]
+  int arg = checks(argc, argv, options); 
   if(arg < 0)
     return -1;
   
   fd1 = open(argv[1], 0);
   fd2 = open(argv[2], 0);
+
   int i; 
   while (rcomp >= 0) {
     nread1 = read(fd1, buffer1, 1024);
@@ -28,11 +30,25 @@ int main (int argc, char* argv[])
     }
     else
     {
-      rcomp=compare(buffer1, buffer2, fd1, fd2, counter);
+      rcomp=compare(buffer1, buffer2, fd1, fd2, counter, options);
     }      
     counter++;
   } 
 
+  //option -d
+  if(options[1]==1)
+  {
+    int difference, lpos1, lpos2;
+    lpos1=lseek(fd1, 0, 2);
+    lpos2=lseek(fd2, 0, 2);
+    if(lpos1>lpos2)
+      difference=lpos1-lpos2;
+    else
+      difference=lpos2-lpos1;
+    printf("The difference in File Lengths of %s and %s is %d\n", argv[1], argv[2], difference);
+  }
+
+  
   close(fd1);
   close(fd2);
       
@@ -58,7 +74,7 @@ void print(int fd, int position){
   } while(count>0);  
 }
 
-int compare(char* buff1, char* buff2, int fd1, int fd2, int counter){
+int compare(char* buff1, char* buff2, int fd1, int fd2, int counter, int* opts){
   int i, position=counter*1024, val=1;
   for(i=0; i<1024; i++) {
     position++;
@@ -67,12 +83,14 @@ int compare(char* buff1, char* buff2, int fd1, int fd2, int counter){
       break;
     }
     else if(buff1[i]=='\0'){
-      print(fd2, position); 
+      if(opts[0]==0)
+        print(fd2, position); 
       val=-1;
       break;
     }
     else if(buff2[i]=='\0'){
-      print(fd1, position);
+      if(opts[0]==0)
+        print(fd1, position);
       val=-1;
       break;
     } 
@@ -83,23 +101,29 @@ int compare(char* buff1, char* buff2, int fd1, int fd2, int counter){
   return val;
 }
 
-int checks(int argc, char* argv[])
+int checks(int argc, char* argv[], int* opts)
 {
     //Checks
   int rval, i;
 
   //Basic command implementation: % ./compare.out path1 path2 -option
-  if(argc < 3 || argc > 4)
+  if(argc < 3)
   {
     printf("Incorrect arguments! Expecting: <path_to_file1> <path_to_file2> <no option/ option -s,-d,-u>\n");
     return -1;
   }
-  else if(argc==4)
-  {
-    if((strcmp(argv[3], "-s")==0) || (strcmp(argv[3], "-d")==0) || (strcmp(argv[3], "-u")==0)); 
-    else {
-      printf("Incorrect option. Try -s,-d,-u next time. Undertaking Default Actions.\n"); 
-      argc--;
+  else if(argc>3)
+  { 
+    for(i=3; i<argc; i++) { 
+      if(strcmp(argv[i], "-s")==0)
+        opts[0]=1;
+      else if(strcmp(argv[i], "-d")==0)
+        opts[1]=1;
+      else if(strcmp(argv[i], "-u")==0)
+        opts[2]=1; 
+      else {
+        printf("Incorrect option %s.Will be ignored\n",argv[i]); 
+      }
     }
   }
 
@@ -108,7 +132,7 @@ int checks(int argc, char* argv[])
     rval = access (argv[i], R_OK);
     if (rval != 0) {
       printf("%s is not readable.\n", argv[i]);
-      return -1;
+      argc=-1;
     }
   }
 
