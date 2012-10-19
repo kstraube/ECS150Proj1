@@ -4,6 +4,8 @@
 #include <string.h>
 
 void reverse(char*, int);
+void compare(char*, char*); 
+
 int main()
 {
   char prompt[400], string[400], original[400], string_caps[400], string_cat[800];
@@ -21,15 +23,13 @@ int main()
   if(read(pfd[0], string, check)) {
   //reversing string
     reverse(string, size);
-    printf("Reverse: %s\n, Original: %s\n", string, original);
+    printf("Reverse: %s\n", string);
   }
   else
     printf("Read error at inverse!\n");
- 
-  printf("%s\n",prompt);
-  //close(pfd[0]);
-  //close(pfd[1]);
-  
+  close(pfd[0]);
+  close(pfd[1]);  
+   
   int pfd_2[2];
   char c;
   check = pipe(pfd_2);
@@ -46,28 +46,53 @@ int main()
         string_caps[i]=c;
       }
     }
-    printf("%s\n", string_caps);
+    printf("Capitals: %s\n", string_caps);
   }
   else
     printf("Read error at upper");
-  
-  //sending back
-  check = write(pfd_2[1], string_caps, size);
+  close(pfd_2[1]);
+  close(pfd_2[0]); 
+ 
+ //sending back
+  int pfd_3[2];
+  check = pipe(pfd_3);
+  if(check<0)
+    printf("Error with setting up pipe\n"); 
+  check = write(pfd_3[1], string_caps, size);
   if(check<0)
     printf("Error writing"); 
-  if(read(pfd_2[0], string_cat, check))
+  if(read(pfd_3[0], string_cat, check))
   {
     strcat(prompt, string_cat);
-    printf("%s\n", prompt);
+    printf("concatenation: %s\n", prompt);
   }
-  
-  
-
-  close(pfd[0]);
-  close(pfd[1]);
   close(pfd_2[0]);
   close(pfd_2[1]);
+  
+  //back to process 1
+  int pfd_bak[2];
+  check = pipe(pfd_bak);
+  if(check<0)
+    printf("Error with setting up pipe\n");
+  check = write(pfd_bak[1], prompt, strlen(prompt));
+  if(read(pfd_bak[0], string_cat, check)){
+    strncpy(original, string_cat, size);
+    compare(original, string_cat);
+  }
+  
+  close(pfd_bak[0]);
+  close(pfd_bak[1]);
+ //close(pfd_2[0]);
+ // close(pfd_2[1]);
     
+}
+
+void compare(char* string1, char* string2){
+  int rval=strcmp(string1, string2);
+  if(rval==0)
+    printf("The strings are Equal\n");
+  else
+    printf("The strings are unequal\n");
 }
 
 void reverse(char* array, int size){
