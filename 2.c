@@ -86,9 +86,9 @@ int main()
       close(fd2[1]);
       status = strlen(prompt);
       if(rval)
-        exit(status);
+        return(status);
       else
-        exit(-1);
+        return(-1);
     }
     else if(gpid == 0){
       close(pfd[1]); close(0);
@@ -102,9 +102,9 @@ int main()
       close(pfd2[1]);
       status = strlen(string_caps);
       if(rval)
-        exit(status);
+        return(status);
       else
-        exit(-1); 
+        return(-1); 
     } 
   } 
   else
