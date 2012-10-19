@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <string.h>
 
+void test();
 void reverse(char*, int);
 void compare(char*, char*); 
 int prompting(char*);
@@ -44,13 +45,14 @@ int main()
   cpid=fork();
   if(cpid > 0){
     close(fd[0]);
-    close(1); 
+    //close(1); 
     dup(fd[1]);
     write(fd[1], original, size);
     close(fd[1]);
     
     waitpid(cpid, &status, 0);
-    close(fd2[1]); close(0);
+    close(fd2[1]); 
+    close(0);
     dup(fd2[0]);
     rval = read(fd2[0], final, status);
     close(fd2[0]);
@@ -69,7 +71,7 @@ int main()
     //forking to  grandchild
     int gpid = fork();
     if(gpid > 0){
-      close(pfd[0]); close(1);
+      close(pfd[0]); 
       dup(pfd[1]);
       rval = write(pfd[1], inverse, size);
       close(pfd[1]);
@@ -101,8 +103,8 @@ int main()
       rval = write(pfd2[1], string_caps, size);
       close(pfd2[1]);
       status = strlen(string_caps);
-      if(rval)
-        return(status);
+      if(rval){
+        return(status);}
       else
         return(-1); 
     } 
@@ -110,9 +112,12 @@ int main()
   else
   {
     printf("Error\n");
-  } 
+  }
 }
 
+void test(){
+  printf("testing\n");
+}
 void compare(char* string1, char* string2){
   int rval=strcmp(string1, string2);
   if(rval==0)
